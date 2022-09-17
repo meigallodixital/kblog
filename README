@@ -1,0 +1,10 @@
+Alpha 0.1 del proyecto API KBLOG
+
+Se trata de un proyecto en django 3.2, python 3.8 y sqlite.
+
+Se aporta la configuración un contenedor docker escucha en el puerto 8888
+Al arrancar el contenedor se ejecutan makemigrations, migrate, losts test y dos commandos que añaden usuarios y post de ejemplo con Faker.
+
+Tambien se ha integrado nose dando un coverage del 75%
+
+En las urls api/doc y api/redocs está la doc autogenerada

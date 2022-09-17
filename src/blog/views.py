@@ -29,7 +29,6 @@ class PostHome(RedirectView):
 
 
 class PostListView(generics.ListAPIView):
-    queryset = Post.objects.filter(published_at__lte=now())
     permission_classes = (AllowAny,)
     serializer_class = PostListSerializer
     ordering = ['-published_at']
@@ -37,6 +36,9 @@ class PostListView(generics.ListAPIView):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['title', 'body', 'author__username', 'author__email']
     ordering_fields = ['published_at', 'title']
+
+    def get_queryset(self):
+        return Post.objects.filter(published_at__lte=now())
 
 
 class PostCreateView(generics.CreateAPIView):

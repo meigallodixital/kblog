@@ -1,4 +1,6 @@
 .vscode
 .venv
+.coverage
+cover
 media/*
 db.sqlite3

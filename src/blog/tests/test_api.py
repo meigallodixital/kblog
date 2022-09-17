@@ -1,10 +1,15 @@
+import copy
+import datetime
+
 from django.template.defaultfilters import slugify
 from django.urls import reverse
+from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.test import APITestCase
+from blog.models import Post
 
 
-class APIPostsTestCase(APITestCase):
+class PostsAPITestCase(APITestCase):
     """ API Post tests """
 
     def setUp(self):
@@ -25,8 +30,10 @@ class APIPostsTestCase(APITestCase):
             'password2': 'samepasswordforall2022',
         }
 
-        self.post1 = {'title': 'one one', 'body': 'one one'}
-        self.post2 = {'title': 'two two', 'body': 'two two'}
+        self.post1 = {'title': 'one one',
+                      'body': 'one one', 'published_at': now()}
+        self.post2 = {'title': 'two two',
+                      'body': 'two two', 'published_at': now()}
 
         self.token1 = None
         self.refresh1 = None
@@ -97,6 +104,7 @@ class APIPostsTestCase(APITestCase):
         """ List posts """
         response = self.client.get(self.list_post_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Post.objects.count(), response.data.get('count'))
 
     def test_post_view(self):
         """ View posts """
@@ -133,7 +141,7 @@ class APIPostsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['title'], data['title'] + '2')
 
-        # Try to edit or edit user2 post with user 1
+        # Try to edit user2 post with user 1
         url = reverse('blog:post-view-update-delete',
                       kwargs={'slug': slugify(self.post2['title'])})
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.token1)
@@ -159,3 +167,19 @@ class APIPostsTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.token2)
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_post_published_in_future(self):
+        """ In future Post """
+        post = copy.copy(self.post1)
+        post['title'] = "future"
+        post['published_at'] = datetime.datetime.now() + \
+            datetime.timedelta(days=1)
+
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.token1)
+        response = self.client.post(self.create_post_url, post)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # As we have one on future reponse count must be database count - 1
+        response = self.client.get(self.list_post_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Post.objects.count()-1, response.data.get('count'))
